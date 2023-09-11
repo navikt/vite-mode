@@ -2,11 +2,13 @@
   "name": "@navikt/express-obo-token-exchange",
   "repository": "navikt/express-obo-token-exchange",
   "description": "",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "author": "NAVIKT",
   "license": "MIT",
   "type": "module",

@@ -1,0 +1,35 @@
+{
+  "name": "@navikt/express-obo-token-exchange",
+  "repository": "navikt/express-obo-token-exchange",
+  "description": "",
+  "version": "0.0.1",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "author": "NAVIKT",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noemit",
+    "lint": "eslint --ext .js,.ts, .",
+    "lint:fix": "eslint --fix --ext .js,.ts, ."
+  },
+  "dependencies": {
+    "node-cache": "5.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.5.0",
+    "@typescript-eslint/eslint-plugin": "6.3.0",
+    "eslint": "8.47.0",
+    "eslint-config-prettier": "9.0.0",
+    "eslint-plugin-import": "2.28.0",
+    "eslint-plugin-prettier": "5.0.0",
+    "eslint-plugin-react": "7.33.1",
+    "eslint-plugin-simple-import-sort": "10.0.0",
+    "eslint-plugin-unicorn": "48.0.1",
+    "prettier": "3.0.1",
+    "typescript": "5.1.6"
+  }
+}

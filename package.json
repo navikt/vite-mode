@@ -6,6 +6,7 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
+  "files": ["dist"],
   "author": "NAVIKT",
   "license": "MIT",
   "type": "module",

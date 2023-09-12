@@ -2,7 +2,7 @@
   "name": "@navikt/express-obo-token-exchange",
   "repository": "navikt/express-obo-token-exchange",
   "description": "",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },

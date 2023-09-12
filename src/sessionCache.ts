@@ -47,10 +47,6 @@ export function getOboTokenForRequest(request: IncomingMessage, scope: string) {
   return cachedValue[scope];
 }
 
-export function TestLog() {
-  console.log("OBO package log");
-}
-
 function getHashedAuthHeader(request: IncomingMessage) {
   const authToken = request.headers["authorization"];
 

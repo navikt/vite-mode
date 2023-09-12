@@ -20,11 +20,21 @@
     "lint": "eslint --ext .js,.ts, .",
     "lint:fix": "eslint --fix --ext .js,.ts, ."
   },
+  "peerDependencies": {
+    "express": "4.x"
+  },
   "dependencies": {
-    "node-cache": "5.1.2"
+    "axios": "1.4.0",
+    "http-proxy-middleware": "3.0.0-beta.0",
+    "node-cache": "5.1.2",
+    "node-jose": "2.2.0",
+    "@types/node-jose": "1.1.10",
+    "uuid": "9.0.0"
   },
   "devDependencies": {
     "@types/node": "20.5.0",
+    "@types/express": "4.17.17",
+    "@types/uuid": "9.0.2",
     "@typescript-eslint/eslint-plugin": "6.3.0",
     "eslint": "8.47.0",
     "eslint-config-prettier": "9.0.0",

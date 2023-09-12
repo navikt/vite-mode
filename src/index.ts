@@ -1,1 +1,1 @@
-export { TestLog } from "./sessionCache.js";
+export { addProxyHandler } from "./apiProxy.js";

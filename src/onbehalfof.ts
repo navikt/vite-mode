@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import jose from "node-jose";
 import { v4 as uuidv4 } from "uuid";
 
-import config from "./config";
+import config from "./config.js";
 import { getOboTokenForRequest, setOboTokenForRequest } from "./sessionCache.js";
 
 const azureAdHeaderConfig = {

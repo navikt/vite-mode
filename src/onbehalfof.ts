@@ -51,7 +51,8 @@ const updateSession = (request: Request, scope: string, result: OnBehalfOfRespon
 };
 
 async function getOnBehalfOfToken(request: Request, scope: string) {
-  const userAccessToken = request.headers["authorization"] ?? "Could not find authorization token in request";
+  const userAccessToken =
+    request.headers["authorization"]?.split(" ")[1] ?? "Could not find authorization token in request";
 
   const parameters = new URLSearchParams();
   parameters.append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer");

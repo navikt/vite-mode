@@ -1,6 +1,6 @@
 {
-  "name": "@navikt/express-obo-token-exchange",
-  "repository": "navikt/express-obo-token-exchange",
+  "name": "@navikt/backend-for-frontend-utils",
+  "repository": "navikt/backend-for-frontend-utils",
   "description": "",
   "version": "0.1.0",
   "publishConfig": {

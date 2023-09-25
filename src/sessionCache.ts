@@ -47,6 +47,20 @@ export function getOboTokenForRequest(request: IncomingMessage, scope: string) {
   return cachedValue[scope];
 }
 
+/**
+ * Delete all cached tokens for your current session.
+ * @return True if tokens were deleted from cache, false if nothing was deleted.
+ */
+export function deleteCachedTokens(request: IncomingMessage) {
+  const hashedAuthHeader = getHashedAuthHeader(request);
+
+  if (!hashedAuthHeader) {
+    return false;
+  }
+
+  return sessionCache.del(hashedAuthHeader) > 0;
+}
+
 function getHashedAuthHeader(request: IncomingMessage) {
   const authToken = request.headers["authorization"];
 

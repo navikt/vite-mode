@@ -1,13 +1,25 @@
 import { Express } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 
-import { addOnBehalfOfToken } from "./onbehalfof.js";
+import { exchangeUsingClientCredentialsFlow, exchangeUsingOnBehalfOfFlow } from "./onbehalfof.js";
 import { getOboTokenForRequest } from "./sessionCache.js";
 
-export function addProxyHandler(server: Express, ingoingUrl: string, outgoingUrl: string, scope: string) {
+type ProxyOptions = {
+  ingoingUrl: string;
+  outgoingUrl: string;
+  scope: string;
+  flow: "CLIENT_CREDENTIALS" | "ON_BEHALF_OF";
+};
+
+const TOKEN_EXCHANGE_FLOWS = {
+  CLIENT_CREDENTIALS: exchangeUsingClientCredentialsFlow,
+  ON_BEHALF_OF: exchangeUsingOnBehalfOfFlow,
+};
+
+export function addProxyHandler(server: Express, { ingoingUrl, outgoingUrl, scope, flow }: ProxyOptions) {
   server.use(
     ingoingUrl,
-    (request, response, next) => addOnBehalfOfToken(request, response, next, scope),
+    (request, response, next) => TOKEN_EXCHANGE_FLOWS[flow]({ request, next, scope }),
     createProxyMiddleware({
       target: outgoingUrl,
       changeOrigin: true,

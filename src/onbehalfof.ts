@@ -1,10 +1,10 @@
 import axios from "axios";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request } from "express";
 import jose from "node-jose";
 import { v4 as uuidv4 } from "uuid";
 
 import config from "./config.js";
-import { getOboTokenForRequest, setOboTokenForRequest } from "./sessionCache.js";
+import { getOboTokenForRequest, setOboTokenForRequest, Token } from "./sessionCache.js";
 
 const azureAdHeaderConfig = {
   headers: {
@@ -18,30 +18,61 @@ export type OnBehalfOfResponse = {
   refresh_token: string;
 };
 
-export async function addOnBehalfOfToken(request: Request, response: Response, next: NextFunction, scope: string) {
+export type ClientCredentialsResponse = {
+  expires_in: number;
+  access_token: string;
+  refresh_token?: string;
+};
+
+type ExchangeTokenOptions = {
+  request: Request;
+  next: NextFunction;
+  scope: string;
+};
+
+export async function exchangeUsingOnBehalfOfFlow({ request, next, scope }: ExchangeTokenOptions) {
   try {
-    const currentOboToken = getOboTokenForRequest(request, scope);
-    if (currentOboToken) {
-      if (currentOboToken.expiresAt > Date.now() / 1000 + 10) {
+    const currentToken = getOboTokenForRequest(request, scope);
+    if (currentToken) {
+      if (isTokenExpired(currentToken)) {
         return next();
       }
-      const token = await getRefreshToken(currentOboToken.refreshToken, scope);
-      updateSession(request, scope, token);
-      return next();
+      if (currentToken.refreshToken) {
+        const token = await getRefreshToken(currentToken.refreshToken, scope);
+        updateSession(request, scope, token);
+        return next();
+      }
     }
-    await getNewToken(request, response, next, scope);
+    const token = await onBehalfOfFlow(scope, request);
+    updateSession(request, scope, token);
     return next();
   } catch (error) {
     return next(error);
   }
 }
 
-async function getNewToken(request: Request, response: Response, next: NextFunction, scope: string) {
-  const token = await getOnBehalfOfToken(request, scope);
-  updateSession(request, scope, token);
+export async function exchangeUsingClientCredentialsFlow({ request, next, scope }: ExchangeTokenOptions) {
+  try {
+    const currentToken = getOboTokenForRequest(request, scope);
+    if (isTokenExpired(currentToken)) {
+      return next();
+    }
+    const token = await clientCredentialsFlow(scope);
+    updateSession(request, scope, token);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
 }
 
-const updateSession = (request: Request, scope: string, result: OnBehalfOfResponse) => {
+function isTokenExpired(token?: Token) {
+  if (!token) {
+    return true;
+  }
+  return token.expiresAt < Date.now() / 1000 - 10;
+}
+
+const updateSession = (request: Request, scope: string, result: OnBehalfOfResponse | ClientCredentialsResponse) => {
   const oboToken = {
     expiresAt: Date.now() / 1000 + result.expires_in,
     accessToken: result.access_token,
@@ -50,22 +81,38 @@ const updateSession = (request: Request, scope: string, result: OnBehalfOfRespon
   setOboTokenForRequest(request, oboToken, scope);
 };
 
-async function getOnBehalfOfToken(request: Request, scope: string) {
+async function onBehalfOfFlow(scope: string, request: Request) {
   const userAccessToken =
     request.headers["authorization"]?.split(" ")[1] ?? "Could not find authorization token in request";
 
   const parameters = new URLSearchParams();
+  const clientAssertion = await generateClientAssertionToken();
   parameters.append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer");
   parameters.append("client_id", config.azureAd.clientId);
-  parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-  parameters.append("requested_token_use", "on_behalf_of");
   parameters.append("scope", scope);
+  parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
+  parameters.append("client_assertion", clientAssertion.toString());
+  parameters.append("requested_token_use", "on_behalf_of");
   parameters.append("assertion", userAccessToken);
 
+  const tokenResponse = await axios.post<OnBehalfOfResponse>(
+    config.azureAd.tokenEndpoint,
+    parameters,
+    azureAdHeaderConfig,
+  );
+  return tokenResponse.data;
+}
+
+async function clientCredentialsFlow(scope: string) {
+  const parameters = new URLSearchParams();
   const clientAssertion = await generateClientAssertionToken();
+  parameters.append("grant_type", "client_credentials");
+  parameters.append("client_id", config.azureAd.clientId);
+  parameters.append("scope", scope);
+  parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
   parameters.append("client_assertion", clientAssertion.toString());
 
-  const tokenResponse = await axios.post<OnBehalfOfResponse>(
+  const tokenResponse = await axios.post<ClientCredentialsResponse>(
     config.azureAd.tokenEndpoint,
     parameters,
     azureAdHeaderConfig,
@@ -97,14 +144,14 @@ function generateClientAssertionToken() {
 
 async function getRefreshToken(refreshToken: string, scope: string) {
   const parameters = new URLSearchParams();
+  const clientAssertion = await generateClientAssertionToken();
+
   parameters.append("grant_type", "refresh_token");
   parameters.append("client_id", config.azureAd.clientId);
-  parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
-  parameters.append("refresh_token", refreshToken);
   parameters.append("scope", scope);
-
-  const clientAssertion = await generateClientAssertionToken();
+  parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
   parameters.append("client_assertion", clientAssertion.toString());
+  parameters.append("refresh_token", refreshToken);
 
   const tokenResponse = await axios.post<OnBehalfOfResponse>(
     config.azureAd.tokenEndpoint,

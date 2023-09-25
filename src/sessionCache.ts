@@ -8,16 +8,16 @@ export const sessionCache = new NodeCache({
 });
 
 type SessionCacheValue = {
-  [scope: string]: OboToken;
+  [scope: string]: Token;
 };
 
-type OboToken = {
+export type Token = {
   expiresAt: number;
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
 };
 
-export function setOboTokenForRequest(request: IncomingMessage, oboToken: OboToken, scope: string) {
+export function setOboTokenForRequest(request: IncomingMessage, oboToken: Token, scope: string) {
   const hashedAuthHeader = getHashedAuthHeader(request);
 
   if (!hashedAuthHeader) {

@@ -34,7 +34,7 @@ export async function exchangeUsingOnBehalfOfFlow({ request, next, scope }: Exch
   try {
     const currentToken = getOboTokenForRequest(request, scope);
     if (currentToken) {
-      if (isTokenExpired(currentToken)) {
+      if (!isTokenExpired(currentToken)) {
         return next();
       }
       if (currentToken.refreshToken) {
@@ -54,7 +54,7 @@ export async function exchangeUsingOnBehalfOfFlow({ request, next, scope }: Exch
 export async function exchangeUsingClientCredentialsFlow({ request, next, scope }: ExchangeTokenOptions) {
   try {
     const currentToken = getOboTokenForRequest(request, scope);
-    if (isTokenExpired(currentToken)) {
+    if (!isTokenExpired(currentToken)) {
       return next();
     }
     const token = await clientCredentialsFlow(scope);

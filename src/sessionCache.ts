@@ -11,10 +11,10 @@ type SessionCacheValue = {
   [scope: string]: OboToken;
 };
 
-type OboToken = {
-  expiresAt: number;
-  accessToken: string;
-  refreshToken: string;
+export type OboToken = {
+  expires_at: number; // TODO, check if this is correct VS expires_at
+  access_token: string;
+  refresh_token: string;
 };
 
 export function setOboTokenForRequest(request: IncomingMessage, oboToken: OboToken, scope: string) {

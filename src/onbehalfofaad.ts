@@ -18,14 +18,14 @@ export type OnBehalfOfResponse = {
   refresh_token: string;
 };
 
-export async function addOnBehalfOfToken(request: Request, response: Response, next: NextFunction, scope: string) {
+export async function addAadOnBehalfOfToken(request: Request, response: Response, next: NextFunction, scope: string) {
   try {
     const currentOboToken = getOboTokenForRequest(request, scope);
     if (currentOboToken) {
-      if (currentOboToken.expiresAt > Date.now() / 1000 + 10) {
+      if (currentOboToken.expires_at > Date.now() / 1000 + 10) {
         return next();
       }
-      const token = await getRefreshToken(currentOboToken.refreshToken, scope);
+      const token = await getRefreshToken(currentOboToken.refresh_token, scope);
       updateSession(request, scope, token);
       return next();
     }
@@ -42,12 +42,12 @@ async function getNewToken(request: Request, response: Response, next: NextFunct
 }
 
 const updateSession = (request: Request, scope: string, result: OnBehalfOfResponse) => {
-  const oboToken = {
-    expiresAt: Date.now() / 1000 + result.expires_in,
-    accessToken: result.access_token,
-    refreshToken: result.refresh_token,
+  const obo_token = {
+    expires_at: Date.now() / 1000 + result.expires_in,
+    access_token: result.access_token,
+    refresh_token: result.refresh_token,
   };
-  setOboTokenForRequest(request, oboToken, scope);
+  setOboTokenForRequest(request, obo_token, scope);
 };
 
 async function getOnBehalfOfToken(request: Request, scope: string) {
@@ -56,7 +56,7 @@ async function getOnBehalfOfToken(request: Request, scope: string) {
 
   const parameters = new URLSearchParams();
   parameters.append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer");
-  parameters.append("client_id", config.azureAd.clientId);
+  parameters.append("client_id", config.azureAd().clientId);
   parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
   parameters.append("requested_token_use", "on_behalf_of");
   parameters.append("scope", scope);
@@ -66,7 +66,7 @@ async function getOnBehalfOfToken(request: Request, scope: string) {
   parameters.append("client_assertion", clientAssertion.toString());
 
   const tokenResponse = await axios.post<OnBehalfOfResponse>(
-    config.azureAd.tokenEndpoint,
+    config.azureAd().tokenEndpoint,
     parameters,
     azureAdHeaderConfig,
   );
@@ -75,10 +75,10 @@ async function getOnBehalfOfToken(request: Request, scope: string) {
 
 function generateClientAssertionToken() {
   const bodyCnt = {
-    sub: config.azureAd.clientId,
-    aud: config.azureAd.issuer,
+    sub: config.azureAd().clientId,
+    aud: config.azureAd().issuer,
     nbf: Math.floor(Date.now() / 1000) - 30,
-    iss: config.azureAd.clientId,
+    iss: config.azureAd().clientId,
     exp: Math.floor(Date.now() / 1000) + 60 * 60,
     jti: uuidv4(),
     iat: Math.floor(Date.now() / 1000) - 30,
@@ -89,7 +89,7 @@ function generateClientAssertionToken() {
       alg: "RS256",
       format: "compact",
     },
-    JSON.parse(config.azureAd.jwk),
+    JSON.parse(config.azureAd().jwk),
   )
     .update(JSON.stringify(bodyCnt), "utf8")
     .final();
@@ -98,7 +98,7 @@ function generateClientAssertionToken() {
 async function getRefreshToken(refreshToken: string, scope: string) {
   const parameters = new URLSearchParams();
   parameters.append("grant_type", "refresh_token");
-  parameters.append("client_id", config.azureAd.clientId);
+  parameters.append("client_id", config.azureAd().clientId);
   parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
   parameters.append("refresh_token", refreshToken);
   parameters.append("scope", scope);
@@ -107,7 +107,7 @@ async function getRefreshToken(refreshToken: string, scope: string) {
   parameters.append("client_assertion", clientAssertion.toString());
 
   const tokenResponse = await axios.post<OnBehalfOfResponse>(
-    config.azureAd.tokenEndpoint,
+    config.azureAd().tokenEndpoint,
     parameters,
     azureAdHeaderConfig,
   );

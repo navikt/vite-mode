@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import { Express, Response } from "express";
 
 /**
@@ -16,6 +17,8 @@ import { Express, Response } from "express";
  * `express.static("./public", { index: false })`
  */
 export function addLocalViteServerHandler(app: Express) {
+  app.use(cookieParser());
+
   app.get("/vite-on", (request, response) => {
     setViteCookie(response, true);
     return response.redirect("/");

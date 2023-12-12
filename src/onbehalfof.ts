@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { NextFunction, Request } from "express";
 import jose from "node-jose";
 import { v4 as uuidv4 } from "uuid";
@@ -47,7 +47,7 @@ export async function exchangeUsingOnBehalfOfFlow({ request, next, scope }: Exch
     updateSession(request, scope, token);
     return next();
   } catch (error) {
-    return next(error);
+    return next(handleError(error));
   }
 }
 
@@ -61,8 +61,16 @@ export async function exchangeUsingClientCredentialsFlow({ request, next, scope 
     updateSession(request, scope, token);
     return next();
   } catch (error) {
-    return next(error);
+    return next(handleError(error));
   }
+}
+
+function handleError(error: unknown) {
+  if (isAxiosError(error)) {
+    console.error("Token exchange failed", error.response?.data);
+    return error.response?.data;
+  }
+  return error;
 }
 
 function isTokenExpired(token?: Token) {

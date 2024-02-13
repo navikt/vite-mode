@@ -37,3 +37,22 @@ export function addProxyHandler(server: Express, { ingoingUrl, outgoingUrl, scop
     }),
   );
 }
+
+type SimpleProxyOptions = {
+  ingoingUrl: string;
+  outgoingUrl: string;
+};
+
+/**
+ * Proxies request without any modification or token exchange
+ */
+export function addSimpleProxyHandler(server: Express, { ingoingUrl, outgoingUrl }: SimpleProxyOptions) {
+  server.use(
+    ingoingUrl,
+    createProxyMiddleware({
+      target: outgoingUrl,
+      changeOrigin: true,
+      logger: console,
+    }),
+  );
+}

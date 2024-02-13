@@ -130,10 +130,10 @@ async function clientCredentialsFlow(scope: string) {
 
 function generateClientAssertionToken() {
   const bodyCnt = {
-    sub: config.azureAd.clientId,
-    aud: config.azureAd.issuer,
+    sub: config.azureAd.clientId(),
+    aud: config.azureAd.issuer(),
     nbf: Math.floor(Date.now() / 1000) - 30,
-    iss: config.azureAd.clientId,
+    iss: config.azureAd.clientId(),
     exp: Math.floor(Date.now() / 1000) + 60 * 60,
     jti: uuidv4(),
     iat: Math.floor(Date.now() / 1000) - 30,

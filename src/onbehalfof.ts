@@ -96,7 +96,7 @@ async function onBehalfOfFlow(scope: string, request: Request) {
   const parameters = new URLSearchParams();
   const clientAssertion = await generateClientAssertionToken();
   parameters.append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer");
-  parameters.append("client_id", config.azureAd.clientId);
+  parameters.append("client_id", config.azureAd.clientId());
   parameters.append("scope", scope);
   parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
   parameters.append("client_assertion", clientAssertion.toString());
@@ -104,7 +104,7 @@ async function onBehalfOfFlow(scope: string, request: Request) {
   parameters.append("assertion", userAccessToken);
 
   const tokenResponse = await axios.post<OnBehalfOfResponse>(
-    config.azureAd.tokenEndpoint,
+    config.azureAd.tokenEndpoint(),
     parameters,
     azureAdHeaderConfig,
   );
@@ -115,13 +115,13 @@ async function clientCredentialsFlow(scope: string) {
   const parameters = new URLSearchParams();
   const clientAssertion = await generateClientAssertionToken();
   parameters.append("grant_type", "client_credentials");
-  parameters.append("client_id", config.azureAd.clientId);
+  parameters.append("client_id", config.azureAd.clientId());
   parameters.append("scope", scope);
   parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
   parameters.append("client_assertion", clientAssertion.toString());
 
   const tokenResponse = await axios.post<ClientCredentialsResponse>(
-    config.azureAd.tokenEndpoint,
+    config.azureAd.tokenEndpoint(),
     parameters,
     azureAdHeaderConfig,
   );
@@ -144,7 +144,7 @@ function generateClientAssertionToken() {
       alg: "RS256",
       format: "compact",
     },
-    JSON.parse(config.azureAd.jwk),
+    JSON.parse(config.azureAd.jwk()),
   )
     .update(JSON.stringify(bodyCnt), "utf8")
     .final();
@@ -155,14 +155,14 @@ async function getRefreshToken(refreshToken: string, scope: string) {
   const clientAssertion = await generateClientAssertionToken();
 
   parameters.append("grant_type", "refresh_token");
-  parameters.append("client_id", config.azureAd.clientId);
+  parameters.append("client_id", config.azureAd.clientId());
   parameters.append("scope", scope);
   parameters.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
   parameters.append("client_assertion", clientAssertion.toString());
   parameters.append("refresh_token", refreshToken);
 
   const tokenResponse = await axios.post<OnBehalfOfResponse>(
-    config.azureAd.tokenEndpoint,
+    config.azureAd.tokenEndpoint(),
     parameters,
     azureAdHeaderConfig,
   );

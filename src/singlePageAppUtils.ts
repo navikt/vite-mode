@@ -16,7 +16,7 @@ import { Express, Response } from "express";
  *
  * `express.static("./public", { index: false })`
  */
-export function addLocalViteServerHandler(app: Express) {
+export function addLocalViteServerHandler(app: Express, port: string) {
   app.use(cookieParser());
 
   app.get("/vite-on", (request, response) => {
@@ -33,7 +33,7 @@ export function addLocalViteServerHandler(app: Express) {
     const localViteServerIsEnabled = request.cookies["use-local-vite-server"] === "true";
 
     if (localViteServerIsEnabled) {
-      return serveLocalViteServer(response);
+      return serveLocalViteServer(response, port);
     }
 
     return next();
@@ -61,8 +61,8 @@ export function addServeSpaHandler(app: Express, pathToSpaFile: string) {
   });
 }
 
-function serveLocalViteServer(response: Response) {
-  return response.send(localViteServerTemplate);
+function serveLocalViteServer(response: Response, port: string) {
+  return response.send(localViteServerTemplate.replaceAll("5173", port));
 }
 
 const localViteServerTemplate = `

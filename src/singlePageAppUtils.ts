@@ -1,22 +1,32 @@
 import cookieParser from "cookie-parser";
 import { Express, Response } from "express";
 
+type ViteModeOptions = {
+  port: string;
+  mountId: string;
+};
+
 /**
- * Allow you to serve your local vite-dev-server at localhost:5173, from a deployed Frackend.
+ * Allow you to serve your local vite-dev-server at localhost:$PORT, from a deployed Frackend.
  *
  * This function adds two handlers to your app:
  * - /vite-on
  * - /vite-off
  *
  * When turned on, a cookie is set to tell this middleware to intercept "*" and serve another index.html that
- * targets the vite-server you have running on localhost:5173 instead of the bundled production code.
+ * targets the vite-server you have running on localhost:$PORT instead of the bundled production code.
  *
  * IMPORTANT: if you use `express.static` to serve your assets, be aware that it will also intercept your "/" route and serve your index.html
  * This will block this middleware from toggling which file is served. To avoid that, exclude the static middleware from serve index.html like this:
  *
  * `express.static("./public", { index: false })`
+ *
+ * Options:
+ *
+ *    - `port`     Which port is your vite dev-server running on
+ *    - `mountId`    What is the css id of your app mounting point (usually "root", "app" or similar)
  */
-export function addLocalViteServerHandler(app: Express, port: string) {
+export function addLocalViteServerHandler(app: Express, options: ViteModeOptions) {
   app.use(cookieParser());
 
   app.get("/vite-on", (request, response) => {
@@ -33,7 +43,7 @@ export function addLocalViteServerHandler(app: Express, port: string) {
     const localViteServerIsEnabled = request.cookies["use-local-vite-server"] === "true";
 
     if (localViteServerIsEnabled) {
-      return serveLocalViteServer(response, port);
+      return serveLocalViteServer(response, options);
     }
 
     return next();
@@ -61,8 +71,10 @@ export function addServeSpaHandler(app: Express, pathToSpaFile: string) {
   });
 }
 
-function serveLocalViteServer(response: Response, port: string) {
-  return response.send(localViteServerTemplate.replaceAll("5173", port));
+function serveLocalViteServer(response: Response, options: ViteModeOptions) {
+  const template = localViteServerTemplate.replaceAll("$PORT", options.port).replaceAll("$MOUNT_ID", options.mountId);
+
+  return response.send(template);
 }
 
 const localViteServerTemplate = `
@@ -70,7 +82,7 @@ const localViteServerTemplate = `
 <html lang="no">
 <head>
     <script type="module">
-        import RefreshRuntime from 'http://localhost:5173/@react-refresh'
+        import RefreshRuntime from 'http://localhost:$PORT/@react-refresh'
         RefreshRuntime.injectIntoGlobalHook(window)
         window.$RefreshReg$ = () => {}
         window.$RefreshSig$ = () => (type) => type
@@ -95,7 +107,7 @@ const localViteServerTemplate = `
             font-size: 20px;
         }
 
-        #explain-why-no-dev-server:has(~ #root:empty) {
+        #explain-why-no-dev-server:has(~ #$MOUNT_ID:empty) {
             visibility: visible;
         }
     </style>
@@ -103,13 +115,13 @@ const localViteServerTemplate = `
 <body>
 <span class="navds-tag navds-tag--success" id="dev-mode"><a href="/vite-off">Skru av DEVMODE</a></span>
 <div id="explain-why-no-dev-server">
-    Det ser ikke ut som du har en lokal frontend kjørende.<br />
-    Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:5173</code><br />
-    eller <a href="/vite-off">skru av DEVMODE</a>
+    Det ser ikke ut som du har en Vite dev-server kjørende.<br />
+    Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PORT</code><br />
+    eller <a href="/vite-off">skru av Vite-mode</a>
 </div>
-<div id="root"></div>
-<script type="module" src="http://localhost:5173/@vite/client"></script>
-<script type="module" src="http://localhost:5173/src/main.tsx"></script>
+<div id="$MOUNT_ID"></div>
+<script type="module" src="http://localhost:$PORT/@vite/client"></script>
+<script type="module" src="http://localhost:$PORT/src/main.tsx"></script>
 </body>
 </html>
 `;

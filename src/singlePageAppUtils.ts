@@ -43,8 +43,8 @@ export function addLocalViteServerHandler(app: Express, options: ViteModeOptions
   app.get("*/vite-off", (request, response) => {
     setViteCookie(response, false);
 
-    const referer = request.headers["referer"] ?? "";
-    const host = `http://${request.headers["host"]}`;
+    const referer = request.headers.referer ?? "";
+    const host = `http://${request.headers.host}`;
 
     const redirectUrl = referer.replace(host, "") || request.originalUrl.replace(/\/vite-off$/, "");
 

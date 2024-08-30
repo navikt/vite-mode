@@ -94,7 +94,7 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
 function getCSP(html: string, options: ViteModeOptions) {
   const VITE_DEV_MODE_SCRIPT_HASH = `sha256-${crypto.createHash("sha256").update(html).digest("base64")}`;
 
-  return `script-src-elem '${VITE_DEV_MODE_SCRIPT_HASH}' http://localhost:${options.port} 'self'; connect-src 'self' 'ws://localhost:${options.port}'`;
+  return `script-src-elem '${VITE_DEV_MODE_SCRIPT_HASH}' http://localhost:${options.port} 'self'; connect-src 'self' ws://localhost:${options.port}`;
 }
 
 const localViteServerTemplate = `

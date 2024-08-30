@@ -34,7 +34,7 @@ const DEFAULT_VITE_OPTIONS = {
  *    - `indexFilePath` relative path to the entrypoint of your application. Usually `/src/main.tsx` or `/src/index.tsx`
  *    - `colorTheme` customize your color scheme that indicates vite-mode is on
  */
-export function addLocalViteServerHandler(app: Express, options: ViteModeOptions) {
+export function addLocalViteServerHandler(app: Express, options: Partial<ViteModeOptions>) {
   app.use(cookieParser());
   app.get("*/vite-on", (request, response) => {
     setViteCookie(response, true);

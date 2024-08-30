@@ -112,5 +112,4 @@ const localViteServerTemplate = `
 <script type="module" src="http://localhost:5173/src/main.tsx"></script>
 </body>
 </html>
-
 `;

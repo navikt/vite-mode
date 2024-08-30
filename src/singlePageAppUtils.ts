@@ -7,9 +7,9 @@ type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
 
 const DEFAULT_VITE_OPTIONS = {
   port: "5173",
-  mountId: "app",
+  mountId: "root",
   indexFilePath: "/src/main.tsx",
-  colorTheme: "#DE2E2E", // Red 400
+  colorTheme: "#ff8800", // Inspired by Vite's color scheme
 };
 
 /**
@@ -32,6 +32,7 @@ const DEFAULT_VITE_OPTIONS = {
  *    - `port`     Which port is your vite dev-server running on
  *    - `mountId`    What is the css id of your app mounting point. Usually `root`, `app` or similar
  *    - `indexFilePath` relative path to the entrypoint of your application. Usually `/src/main.tsx` or `/src/index.tsx`
+ *    - `colorTheme` customize your color scheme that indicates vite-mode is on
  */
 export function addLocalViteServerHandler(app: Express, options: Partial<ViteModeOptions>) {
   app.use(cookieParser());
@@ -83,6 +84,7 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
   const template = localViteServerTemplate
     .replaceAll("$PORT", options.port)
     .replaceAll("$MOUNT_ID", options.mountId)
+    .replaceAll("COLOR_THEME", options.colorTheme)
     .replaceAll("$INDEX_FILE_PATH", options.indexFilePath);
 
   response.setHeader("Content-Security-Policy", getCSP(template, options));
@@ -108,12 +110,18 @@ const localViteServerTemplate = `
       </script>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>[DEVMODE]</title>
+      <title>[VITE-MODE]</title>
       <style>
+          #$MOUNT_ID {
+            outline: 4px solid $COLOR_THEME;
+            outline-offset: -4px;
+          }
           #dev-mode {
               position: absolute;
-              left: 20px;
-              top: 30px;
+              background: $COLOR_THEME;
+              border-radius: 4px;
+              right: 10px;
+              bottom: 50px;
               cursor: pointer;
           }
   
@@ -131,7 +139,7 @@ const localViteServerTemplate = `
       </style>
   </head>
   <body>
-    <span class="navds-tag navds-tag--success" id="dev-mode"><a href="/vite-off">Skru av DEVMODE</a></span>
+    <span class="navds-tag navds-tag--success" id="dev-mode"><a href="/vite-off">Skru av Vite-mode</a></span>
     <div id="explain-why-no-dev-server">
         Det ser ikke ut som du har en Vite dev-server kjørende.<br />
         Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PORT</code><br />

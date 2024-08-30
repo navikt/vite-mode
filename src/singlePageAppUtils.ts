@@ -90,11 +90,50 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
     .replace("$NONCE", nonce)
     .replaceAll("$INDEX_FILE_PATH", options.indexFilePath);
 
-  response.setHeader("Content-Security-Policy", getCSP(nonce, options));
+  response.setHeader(
+    "Content-Security-Policy",
+    mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
+  );
   return response.send(template);
 }
+
+/**
+ * We need the following CSP:
+ * script-src-elem: to enable the inline script that makes refresh work
+ * connect-src: to enable actual live reloading through websocket
+ * img-src: to enable loading images from the dev-server instead of the actual server
+ */
 function getCSP(nonce: string, options: ViteModeOptions) {
-  return `script-src-elem 'nonce-${nonce}' http://localhost:${options.port} 'self'; connect-src 'self' ws://localhost:${options.port}`;
+  const httpAddress = `http://localhost:${options.port}`;
+  const wsAddress = `ws://localhost:${options.port}`;
+  return `script-src-elem 'nonce-${nonce}' ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
+}
+
+function mergeCSP(cspHeaders: string[]) {
+  const combinedCSP: Record<string, Set<string>> = {};
+
+  for (const csp of cspHeaders) {
+    const directives = csp.split(";");
+
+    for (const directive of directives) {
+      const [name, ...values] = directive.trim().split(/\s+/);
+      if (!combinedCSP[name]) {
+        combinedCSP[name] = new Set();
+      }
+
+      for (const value of values) {
+        combinedCSP[name].add(value);
+      }
+    }
+  }
+
+  // Convert combinedCSP object to CSP header string
+  let combinedCSPHeader = "";
+  for (const [name, values] of Object.entries(combinedCSP)) {
+    combinedCSPHeader += `${name} ${[...values].join(" ")}; `;
+  }
+
+  return combinedCSPHeader.trim();
 }
 
 const localViteServerTemplate = `

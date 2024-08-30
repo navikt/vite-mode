@@ -1,6 +1,6 @@
 {
-  "name": "@navikt/backend-for-frontend-utils",
-  "repository": "navikt/backend-for-frontend-utils",
+  "name": "@navikt/vite-mode",
+  "repository": "navikt/vite-mode",
   "description": "",
   "version": "0.8.0",
   "publishConfig": {
@@ -16,36 +16,28 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "check-types": "tsc --noemit",
-    "lint": "eslint --ext .js,.ts, .",
-    "lint:fix": "eslint --fix --ext .js,.ts, ."
+    "types:check": "tsc --noemit",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
   },
   "peerDependencies": {
     "express": "4.x"
   },
   "dependencies": {
-    "axios": "1.6.2",
-    "cookie-parser": "1.4.6",
-    "http-proxy-middleware": "3.0.0-beta.0",
-    "node-cache": "5.1.2",
-    "node-jose": "2.2.0",
-    "uuid": "9.0.1"
+    "cookie-parser": "1.4.6"
   },
   "devDependencies": {
-    "@types/cookie-parser": "1.4.6",
+    "@eslint/eslintrc": "3.1.0",
+    "@eslint/js": "9.9.1",
+    "@types/cookie-parser": "1.4.7",
     "@types/express": "4.17.21",
-    "@types/node": "20.10.4",
-    "@types/node-jose": "1.1.13",
-    "@types/uuid": "9.0.7",
-    "@typescript-eslint/eslint-plugin": "6.13.2",
-    "eslint": "8.55.0",
-    "eslint-config-prettier": "9.1.0",
-    "eslint-plugin-import": "2.29.0",
-    "eslint-plugin-prettier": "5.0.1",
-    "eslint-plugin-react": "7.33.2",
-    "eslint-plugin-simple-import-sort": "10.0.0",
-    "eslint-plugin-unicorn": "49.0.0",
-    "prettier": "3.1.0",
-    "typescript": "5.3.3"
+    "@types/node": "22.5.1",
+    "eslint": "9.9.1",
+    "eslint-plugin-prettier": "5.2.1",
+    "eslint-plugin-simple-import-sort": "12.1.1",
+    "eslint-plugin-unicorn": "55.0.0",
+    "prettier": "3.3.3",
+    "typescript": "5.5.4",
+    "typescript-eslint": "8.3.0"
   }
 }

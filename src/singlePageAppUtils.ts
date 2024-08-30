@@ -1,10 +1,15 @@
+import * as crypto from "node:crypto";
+
 import cookieParser from "cookie-parser";
 import { Express, Response } from "express";
 
-type ViteModeOptions = {
-  port: string;
-  mountId: string;
-  indexFilePath: string;
+type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
+
+const DEFAULT_VITE_OPTIONS = {
+  port: "5173",
+  mountId: "app",
+  indexFilePath: "/src/main.tsx",
+  colorTheme: "#DE2E2E", // Red 400
 };
 
 /**
@@ -28,7 +33,7 @@ type ViteModeOptions = {
  *    - `mountId`    What is the css id of your app mounting point. Usually `root`, `app` or similar
  *    - `indexFilePath` relative path to the entrypoint of your application. Usually `/src/main.tsx` or `/src/index.tsx`
  */
-export function addLocalViteServerHandler(app: Express, options: ViteModeOptions) {
+export function addLocalViteServerHandler(app: Express, options: Partial<ViteModeOptions>) {
   app.use(cookieParser());
 
   app.get("/vite-on", (request, response) => {
@@ -45,7 +50,8 @@ export function addLocalViteServerHandler(app: Express, options: ViteModeOptions
     const localViteServerIsEnabled = request.cookies["use-local-vite-server"] === "true";
 
     if (localViteServerIsEnabled) {
-      return serveLocalViteServer(response, options);
+      const mergedOptions = { ...DEFAULT_VITE_OPTIONS, ...options };
+      return serveLocalViteServer(response, mergedOptions);
     }
 
     return next();
@@ -79,7 +85,14 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
     .replaceAll("$MOUNT_ID", options.mountId)
     .replaceAll("$INDEX_FILE_PATH", options.indexFilePath);
 
+  response.setHeader("Content-Security-Policy", getCSP(template, options));
   return response.send(template);
+}
+
+function getCSP(html: string, options: ViteModeOptions) {
+  const VITE_DEV_MODE_SCRIPT_HASH = `sha256-${crypto.createHash("sha256").update(html).digest("base64")}`;
+
+  return `script-src-elem '${VITE_DEV_MODE_SCRIPT_HASH}' http://localhost:${options.port} 'self'; connect-src 'self' 'ws://localhost:${options.port}'`;
 }
 
 const localViteServerTemplate = `
@@ -124,7 +137,10 @@ const localViteServerTemplate = `
         Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PORT</code><br />
         eller <a href="/vite-off">skru av Vite-mode</a>
     </div>
-      <div id="$MOUNT_ID"></div>
+    <div id="$MOUNT_ID"></div>
+    <!--Sonarcloud vil klage på at disse script-tagsa ikke har en integrity checksum.-->
+    <!--Jeg anser det som fair å ignorere den. Scriptene peker kun til lokal maskin og denne filen serveres ikke i prod.-->
+    <!--Det ville heller ikke latt seg gjøre å ha en integrity hash, da hele poenget med denne funksjonaliteten er at scriptene kan forandre seg for å teste lokal app i dev-miljø-->
     <script type="module" src="http://localhost:$PORT/@vite/client" />
     <script type="module" src="http://localhost:$PORT/$INDEX_FILE_PATH" />
   </body>

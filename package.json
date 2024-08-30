@@ -1,6 +1,6 @@
 {
-  "name": "@navikt/backend-for-frontend-utils",
-  "repository": "navikt/backend-for-frontend-utils",
+  "name": "@navikt/vite-mode",
+  "repository": "navikt/vite-mode",
   "description": "",
   "version": "0.8.0",
   "publishConfig": {

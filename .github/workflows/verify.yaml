@@ -1,0 +1,30 @@
+name: "verify"
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'src/**'
+      - '.github/workflows/verify.yaml'
+
+jobs:
+  verify:
+    name: Verify there are no lint or typescript errors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        if: ${{ !cancelled() }}
+        run: npm run lint
+
+      - name: Check for typescript errors
+        if: ${{ !cancelled() }}
+        run: npm run types:check

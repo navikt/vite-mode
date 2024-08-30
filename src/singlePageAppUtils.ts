@@ -8,7 +8,7 @@ type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
 const DEFAULT_VITE_OPTIONS = {
   port: "5173",
   mountId: "root",
-  indexFilePath: "/src/main.tsx",
+  indexFilePath: "src/main.tsx",
   colorTheme: "#ff8800", // Inspired by Vite's color scheme
 };
 
@@ -34,27 +34,28 @@ const DEFAULT_VITE_OPTIONS = {
  *    - `indexFilePath` relative path to the entrypoint of your application. Usually `/src/main.tsx` or `/src/index.tsx`
  *    - `colorTheme` customize your color scheme that indicates vite-mode is on
  */
-export function addLocalViteServerHandler(app: Express, options: Partial<ViteModeOptions>) {
+export function addLocalViteServerHandler(app: Express, options: ViteModeOptions) {
   app.use(cookieParser());
-
-  app.get("/vite-on", (request, response) => {
+  app.get("*/vite-on", (request, response) => {
     setViteCookie(response, true);
-    return response.redirect("/");
+    return response.redirect(request.originalUrl.replace(/\/vite-on$/, ""));
   });
-
-  app.get("/vite-off", (request, response) => {
+  app.get("*/vite-off", (request, response) => {
     setViteCookie(response, false);
-    return response.redirect("/");
-  });
 
+    const referer = request.headers.referer ?? "";
+    const host = `http://${request.headers.host}`;
+
+    const redirectUrl = referer.replace(host, "") || request.originalUrl.replace(/\/vite-off$/, "");
+
+    return response.redirect(redirectUrl);
+  });
   app.get("*", (request, response, next) => {
     const localViteServerIsEnabled = request.cookies["use-local-vite-server"] === "true";
-
     if (localViteServerIsEnabled) {
       const mergedOptions = { ...DEFAULT_VITE_OPTIONS, ...options };
       return serveLocalViteServer(response, mergedOptions);
     }
-
     return next();
   });
 }
@@ -79,29 +80,70 @@ export function addServeSpaHandler(app: Express, pathToSpaFile: string) {
     return response.sendFile(pathToSpaFile);
   });
 }
-
 function serveLocalViteServer(response: Response, options: ViteModeOptions) {
+  const nonce = crypto.randomBytes(16).toString("base64");
+
   const template = localViteServerTemplate
     .replaceAll("$PORT", options.port)
     .replaceAll("$MOUNT_ID", options.mountId)
-    .replaceAll("COLOR_THEME", options.colorTheme)
+    .replaceAll("$COLOR_THEME", options.colorTheme)
+    .replace("$NONCE", nonce)
     .replaceAll("$INDEX_FILE_PATH", options.indexFilePath);
 
-  response.setHeader("Content-Security-Policy", getCSP(template, options));
+  response.setHeader(
+    "Content-Security-Policy",
+    mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
+  );
   return response.send(template);
 }
 
-function getCSP(html: string, options: ViteModeOptions) {
-  const VITE_DEV_MODE_SCRIPT_HASH = `sha256-${crypto.createHash("sha256").update(html).digest("base64")}`;
+/**
+ * We need the following CSP:
+ * script-src-elem: to enable the inline script that makes refresh work
+ * connect-src: to enable actual live reloading through websocket
+ * img-src: to enable loading images from the dev-server instead of the actual server
+ */
+function getCSP(nonce: string, options: ViteModeOptions) {
+  const httpAddress = `http://localhost:${options.port}`;
+  const wsAddress = `ws://localhost:${options.port}`;
+  return `script-src-elem 'nonce-${nonce}' ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
+}
 
-  return `script-src-elem '${VITE_DEV_MODE_SCRIPT_HASH}' http://localhost:${options.port} 'self'; connect-src 'self' 'ws://localhost:${options.port}'`;
+/**
+ * Algorithm for merging cspHeaders. Author-credit: ChatGPT
+ */
+function mergeCSP(cspHeaders: string[]) {
+  const combinedCSP: Record<string, Set<string>> = {};
+
+  for (const csp of cspHeaders) {
+    const directives = csp.split(";");
+
+    for (const directive of directives) {
+      const [name, ...values] = directive.trim().split(/\s+/);
+      if (!combinedCSP[name]) {
+        combinedCSP[name] = new Set();
+      }
+
+      for (const value of values) {
+        combinedCSP[name].add(value);
+      }
+    }
+  }
+
+  // Convert combinedCSP object to CSP header string
+  let combinedCSPHeader = "";
+  for (const [name, values] of Object.entries(combinedCSP)) {
+    combinedCSPHeader += `${name} ${[...values].join(" ")}; `;
+  }
+
+  return combinedCSPHeader.trim();
 }
 
 const localViteServerTemplate = `
 <!DOCTYPE html>
 <html lang="no">
   <head>
-      <script type="module">
+      <script type="module" nonce="$NONCE">
           import RefreshRuntime from 'http://localhost:$PORT/@react-refresh'
           RefreshRuntime.injectIntoGlobalHook(window)
           window.$RefreshReg$ = () => {}
@@ -112,12 +154,14 @@ const localViteServerTemplate = `
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>[VITE-MODE]</title>
       <style>
-          #$MOUNT_ID {
+         #$MOUNT_ID {
             outline: 4px solid $COLOR_THEME;
             outline-offset: -4px;
           }
           #dev-mode {
-              position: absolute;
+              position: fixed;
+              padding: 4px;
+              border: black;
               background: $COLOR_THEME;
               border-radius: 4px;
               right: 10px;
@@ -139,7 +183,7 @@ const localViteServerTemplate = `
       </style>
   </head>
   <body>
-    <span class="navds-tag navds-tag--success" id="dev-mode"><a href="/vite-off">Skru av Vite-mode</a></span>
+    <span id="dev-mode"><a href="vite-off">Skru av Vite-mode</a></span>
     <div id="explain-why-no-dev-server">
         Det ser ikke ut som du har en Vite dev-server kjørende.<br />
         Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PORT</code><br />
@@ -149,8 +193,8 @@ const localViteServerTemplate = `
     <!--Sonarcloud vil klage på at disse script-tagsa ikke har en integrity checksum.-->
     <!--Jeg anser det som fair å ignorere den. Scriptene peker kun til lokal maskin og denne filen serveres ikke i prod.-->
     <!--Det ville heller ikke latt seg gjøre å ha en integrity hash, da hele poenget med denne funksjonaliteten er at scriptene kan forandre seg for å teste lokal app i dev-miljø-->
-    <script type="module" src="http://localhost:$PORT/@vite/client" />
-    <script type="module" src="http://localhost:$PORT/$INDEX_FILE_PATH" />
+    <script type="module" src="http://localhost:$PORT/@vite/client"></script>
+    <script type="module" src="http://localhost:$PORT/$INDEX_FILE_PATH"></script>
   </body>
 </html>
 `;

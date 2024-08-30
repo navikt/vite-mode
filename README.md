@@ -8,7 +8,7 @@ Use with care, and ideally strong request validation on the API side.
 
 #### Access with PAT(public access token)
 
-The package `@navikt/backend-for-frontend-utils` resides in the navikt github package registry. A token is required to access it.
+The package `@navikt/vite-mode` resides in the navikt github package registry. A token is required to access it.
 
 1. Create a (legacy) [PAT](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) token.
 2. Give the token the `read:packages` scope, and authorize the token to access the navikt organization. 

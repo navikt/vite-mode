@@ -4,6 +4,7 @@ import { Express, Response } from "express";
 type ViteModeOptions = {
   port: string;
   mountId: string;
+  indexFilePath: string;
 };
 
 /**
@@ -24,7 +25,8 @@ type ViteModeOptions = {
  * Options:
  *
  *    - `port`     Which port is your vite dev-server running on
- *    - `mountId`    What is the css id of your app mounting point (usually "root", "app" or similar)
+ *    - `mountId`    What is the css id of your app mounting point. Usually `root`, `app` or similar
+ *    - `indexFilePath` relative path to the entrypoint of your application. Usually `/src/main.tsx` or `/src/index.tsx`
  */
 export function addLocalViteServerHandler(app: Express, options: ViteModeOptions) {
   app.use(cookieParser());
@@ -72,7 +74,10 @@ export function addServeSpaHandler(app: Express, pathToSpaFile: string) {
 }
 
 function serveLocalViteServer(response: Response, options: ViteModeOptions) {
-  const template = localViteServerTemplate.replaceAll("$PORT", options.port).replaceAll("$MOUNT_ID", options.mountId);
+  const template = localViteServerTemplate
+    .replaceAll("$PORT", options.port)
+    .replaceAll("$MOUNT_ID", options.mountId)
+    .replaceAll("$INDEX_FILE_PATH", options.indexFilePath);
 
   return response.send(template);
 }
@@ -80,48 +85,48 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
 const localViteServerTemplate = `
 <!DOCTYPE html>
 <html lang="no">
-<head>
-    <script type="module">
-        import RefreshRuntime from 'http://localhost:$PORT/@react-refresh'
-        RefreshRuntime.injectIntoGlobalHook(window)
-        window.$RefreshReg$ = () => {}
-        window.$RefreshSig$ = () => (type) => type
-        window.__vite_plugin_react_preamble_installed__ = true
-    </script>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>[DEVMODE]</title>
-    <style>
-        #dev-mode {
-            position: absolute;
-            left: 20px;
-            top: 30px;
-            cursor: pointer;
-        }
-
-        #explain-why-no-dev-server {
-            visibility: hidden;
-            position: absolute;
-            left: 100px;
-            top: 100px;
-            font-size: 20px;
-        }
-
-        #explain-why-no-dev-server:has(~ #$MOUNT_ID:empty) {
-            visibility: visible;
-        }
-    </style>
-</head>
-<body>
-<span class="navds-tag navds-tag--success" id="dev-mode"><a href="/vite-off">Skru av DEVMODE</a></span>
-<div id="explain-why-no-dev-server">
-    Det ser ikke ut som du har en Vite dev-server kjørende.<br />
-    Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PORT</code><br />
-    eller <a href="/vite-off">skru av Vite-mode</a>
-</div>
-<div id="$MOUNT_ID"></div>
-<script type="module" src="http://localhost:$PORT/@vite/client"></script>
-<script type="module" src="http://localhost:$PORT/src/main.tsx"></script>
-</body>
+  <head>
+      <script type="module">
+          import RefreshRuntime from 'http://localhost:$PORT/@react-refresh'
+          RefreshRuntime.injectIntoGlobalHook(window)
+          window.$RefreshReg$ = () => {}
+          window.$RefreshSig$ = () => (type) => type
+          window.__vite_plugin_react_preamble_installed__ = true
+      </script>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>[DEVMODE]</title>
+      <style>
+          #dev-mode {
+              position: absolute;
+              left: 20px;
+              top: 30px;
+              cursor: pointer;
+          }
+  
+          #explain-why-no-dev-server {
+              visibility: hidden;
+              position: absolute;
+              left: 100px;
+              top: 100px;
+              font-size: 20px;
+          }
+  
+          #explain-why-no-dev-server:has(~ #$MOUNT_ID:empty) {
+              visibility: visible;
+          }
+      </style>
+  </head>
+  <body>
+    <span class="navds-tag navds-tag--success" id="dev-mode"><a href="/vite-off">Skru av DEVMODE</a></span>
+    <div id="explain-why-no-dev-server">
+        Det ser ikke ut som du har en Vite dev-server kjørende.<br />
+        Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PORT</code><br />
+        eller <a href="/vite-off">skru av Vite-mode</a>
+    </div>
+      <div id="$MOUNT_ID"></div>
+    <script type="module" src="http://localhost:$PORT/@vite/client" />
+    <script type="module" src="http://localhost:$PORT/$INDEX_FILE_PATH" />
+  </body>
 </html>
 `;

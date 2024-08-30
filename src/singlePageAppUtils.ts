@@ -109,6 +109,9 @@ function getCSP(nonce: string, options: ViteModeOptions) {
   return `script-src-elem 'nonce-${nonce}' ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
 }
 
+/**
+ * Algorithm for merging cspHeaders. Author-credit: ChatGPT
+ */
 function mergeCSP(cspHeaders: string[]) {
   const combinedCSP: Record<string, Set<string>> = {};
 

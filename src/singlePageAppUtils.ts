@@ -112,12 +112,14 @@ const localViteServerTemplate = `
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>[VITE-MODE]</title>
       <style>
-          #$MOUNT_ID {
+         #$MOUNT_ID {
             outline: 4px solid $COLOR_THEME;
             outline-offset: -4px;
           }
           #dev-mode {
-              position: absolute;
+              position: fixed;
+              padding: 4px;
+              border: black;
               background: $COLOR_THEME;
               border-radius: 4px;
               right: 10px;

@@ -33,11 +33,14 @@ const DEFAULT_VITE_OPTIONS = {
  *    - `mountId`    What is the css id of your app mounting point. Usually `root`, `app` or similar
  *    - `indexFilePath` relative path to the entrypoint of your application. Usually `/src/main.tsx` or `/src/index.tsx`
  *    - `colorTheme` customize your color scheme that indicates vite-mode is on
+ *
+ * vite-on and vite-off uses strict-origin-when-cross-origin: enables us to land on the same path when turning mode on/off. Without we would always redirect to "/".
  */
 export function addLocalViteServerHandler(app: Express, options: Partial<ViteModeOptions>) {
   app.use(cookieParser());
   app.get("*/vite-on", (request, response) => {
     setViteCookie(response, true);
+    response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     return response.redirect(request.originalUrl.replace(/\/vite-on$/, ""));
   });
   app.get("*/vite-off", (request, response) => {
@@ -47,7 +50,7 @@ export function addLocalViteServerHandler(app: Express, options: Partial<ViteMod
     const host = `http://${request.headers.host}`;
 
     const redirectUrl = referer.replace(host, "") || request.originalUrl.replace(/\/vite-off$/, "");
-
+    response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     return response.redirect(redirectUrl);
   });
   app.get("*", (request, response, next) => {

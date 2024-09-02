@@ -1,8 +1,6 @@
 # About
 
-Express middleware to exchange authorization token from Wonderwall to OBO-token required for other upstream services
-
-Also provides an option of a vite dev-mode, where the deployed node express server can "mirror" your localhost vite dev-server. 
+Provides a vite dev-mode, where the deployed node express server can "mirror" your localhost vite dev-server. 
 This allows your webapp/devserver to access your development or production environment, making mocking of other services unnecessary.
 Use with care, and ideally strong request validation on the API side.
 

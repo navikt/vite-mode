@@ -2,7 +2,7 @@
   "name": "@navikt/vite-mode",
   "repository": "navikt/vite-mode",
   "description": "",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },

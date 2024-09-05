@@ -70,7 +70,6 @@ export function addLocalViteServerHandler(app: IRouter, options: Partial<ViteMod
     if (localViteServerIsEnabled) {
       const mergedOptions = { ...DEFAULT_VITE_OPTIONS, ...options };
       serveLocalViteServer(response, mergedOptions);
-      next();
     }
     return next();
   });

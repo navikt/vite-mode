@@ -7,7 +7,9 @@ type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
 
 const DEFAULT_VITE_OPTIONS = {
   port: "5173",
+  subpath: "",
   mountId: "root",
+  useNonce: true, // TODO: explain
   indexFilePath: "src/main.tsx",
   colorTheme: "#ff8800", // Inspired by Vite's color scheme
 };
@@ -20,14 +22,14 @@ declare module "express-serve-static-core" {
 }
 
 /**
- * Allow you to serve your local vite-dev-server at localhost:$PORT, from a deployed Frackend.
+ * Allow you to serve your local vite-dev-server at localhost:$PATH/$SUBPATH, from a deployed Frackend.
  *
  * This function adds two handlers to your app:
  * - /vite-on
  * - /vite-off
  *
  * When turned on, a cookie is set to tell this middleware to intercept "*" and serve another index.html that
- * targets the vite-server you have running on localhost:$PORT instead of the bundled production code.
+ * targets the vite-server you have running on localhost:$PORT/SUBPATH instead of the bundled production code.
  *
  * IMPORTANT: if you use `express.static` to serve your assets, be aware that it will also intercept your "/" route and serve your index.html
  * This will block this middleware from toggling which file is served. To avoid that, exclude the static middleware from serve index.html like this:
@@ -39,6 +41,7 @@ declare module "express-serve-static-core" {
  *    - `port`     Which port is your vite dev-server running on
  *    - `mountId`    What is the css id of your app mounting point. Usually `root`, `app` or similar
  *    - `indexFilePath` relative path to the entrypoint of your application. Usually `/src/main.tsx` or `/src/index.tsx`
+ *    - `subpath`  Normally your Vite app runs on the root of the ingress "/". But sometimes it could be on a subpath, like different apps that run at nav.no/some-app/home
  *    - `colorTheme` customize your color scheme that indicates vite-mode is on
  *
  * vite-on and vite-off uses strict-origin-when-cross-origin: enables us to land on the same path when turning mode on/off. Without we would always redirect to "/".
@@ -99,7 +102,7 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
   const nonce = crypto.randomBytes(16).toString("base64");
 
   const template = localViteServerTemplate
-    .replaceAll("$PORT", options.port)
+    .replaceAll("$PATH", `${options.port}${options.subpath}`)
     .replaceAll("$MOUNT_ID", options.mountId)
     .replaceAll("$COLOR_THEME", options.colorTheme)
     .replace("$NONCE", nonce)
@@ -107,7 +110,7 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
 
   response.setHeader(
     "Content-Security-Policy",
-    mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(options)]),
+    mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
   );
 
   response.viteModeHtml = template;
@@ -119,10 +122,11 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
  * connect-src: to enable actual live reloading through websocket
  * img-src: to enable loading images from the dev-server instead of the actual server
  */
-function getCSP(options: ViteModeOptions) {
+function getCSP(nonce: string, options: ViteModeOptions) {
   const httpAddress = `http://localhost:${options.port}`;
   const wsAddress = `ws://localhost:${options.port}`;
-  return `script-src-elem ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
+  const nonceCSP = options.useNonce ? `'nonce-${nonce}'` : "";
+  return `script-src-elem ${nonceCSP} ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
 }
 
 /**
@@ -202,15 +206,15 @@ const localViteServerTemplate = `
     <span id="dev-mode"><a href="vite-off">Skru av Vite-mode</a></span>
     <div id="explain-why-no-dev-server">
         Det ser ikke ut som du har en Vite dev-server kjørende.<br />
-        Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PORT</code><br />
+        Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PATH</code><br />
         eller <a href="/vite-off">skru av Vite-mode</a>
     </div>
     <div id="$MOUNT_ID"></div>
     <!--Sonarcloud vil klage på at disse script-tagsa ikke har en integrity checksum.-->
     <!--Jeg anser det som fair å ignorere den. Scriptene peker kun til lokal maskin og denne filen serveres ikke i prod.-->
     <!--Det ville heller ikke latt seg gjøre å ha en integrity hash, da hele poenget med denne funksjonaliteten er at scriptene kan forandre seg for å teste lokal app i dev-miljø-->
-    <script type="module" src="http://localhost:$PORT/@vite/client"></script>
-    <script type="module" src="http://localhost:$PORT/$INDEX_FILE_PATH"></script>
+    <script type="module" src="http://localhost:$PATH/@vite/client"></script>
+    <script type="module" src="http://localhost:$PATH/$INDEX_FILE_PATH"></script>
   </body>
 </html>
 `;

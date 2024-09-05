@@ -12,6 +12,13 @@ const DEFAULT_VITE_OPTIONS = {
   colorTheme: "#ff8800", // Inspired by Vite's color scheme
 };
 
+// Add "viteModeHtml" as a possible property on the Express Response type
+declare module "express-serve-static-core" {
+  interface Response {
+    viteModeHtml?: string;
+  }
+}
+
 /**
  * Allow you to serve your local vite-dev-server at localhost:$PORT, from a deployed Frackend.
  *
@@ -38,10 +45,16 @@ const DEFAULT_VITE_OPTIONS = {
  */
 export function addLocalViteServerHandler(app: Express, options: Partial<ViteModeOptions>) {
   app.use(cookieParser());
+  app.use((request, response, next) => {
+    response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    return next();
+  });
+
   app.get("*/vite-on", (request, response) => {
     setViteCookie(response, true);
-    response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    return response.redirect(request.originalUrl.replace(/\/vite-on$/, ""));
+    const redirectUrl = request.originalUrl.replace(/\/vite-on$/, "") || "/";
+
+    return response.redirect(redirectUrl);
   });
   app.get("*/vite-off", (request, response) => {
     setViteCookie(response, false);
@@ -50,14 +63,14 @@ export function addLocalViteServerHandler(app: Express, options: Partial<ViteMod
     const host = `http://${request.headers.host}`;
 
     const redirectUrl = referer.replace(host, "") || request.originalUrl.replace(/\/vite-off$/, "");
-    response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     return response.redirect(redirectUrl);
   });
   app.get("*", (request, response, next) => {
     const localViteServerIsEnabled = request.cookies["use-local-vite-server"] === "true";
     if (localViteServerIsEnabled) {
       const mergedOptions = { ...DEFAULT_VITE_OPTIONS, ...options };
-      return serveLocalViteServer(response, mergedOptions);
+      serveLocalViteServer(response, mergedOptions);
+      next();
     }
     return next();
   });
@@ -97,7 +110,8 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
     "Content-Security-Policy",
     mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
   );
-  return response.send(template);
+
+  response.viteModeHtml = template;
 }
 
 /**

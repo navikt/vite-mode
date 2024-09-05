@@ -1,7 +1,7 @@
 import * as crypto from "node:crypto";
 
 import cookieParser from "cookie-parser";
-import { Express, Response, Router } from "express";
+import { Express, IRouter, Response } from "express";
 
 type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
 
@@ -43,7 +43,7 @@ declare module "express-serve-static-core" {
  *
  * vite-on and vite-off uses strict-origin-when-cross-origin: enables us to land on the same path when turning mode on/off. Without we would always redirect to "/".
  */
-export function addLocalViteServerHandler(app: Router & Express, options: Partial<ViteModeOptions>) {
+export function addLocalViteServerHandler(app: IRouter, options: Partial<ViteModeOptions>) {
   app.use(cookieParser());
   app.use((request, response, next) => {
     response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");

@@ -107,7 +107,7 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
 
   response.setHeader(
     "Content-Security-Policy",
-    mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
+    mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(options)]),
   );
 
   response.viteModeHtml = template;
@@ -119,10 +119,10 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
  * connect-src: to enable actual live reloading through websocket
  * img-src: to enable loading images from the dev-server instead of the actual server
  */
-function getCSP(nonce: string, options: ViteModeOptions) {
+function getCSP(options: ViteModeOptions) {
   const httpAddress = `http://localhost:${options.port}`;
   const wsAddress = `ws://localhost:${options.port}`;
-  return `script-src-elem 'nonce-${nonce}' ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
+  return `script-src-elem ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
 }
 
 /**

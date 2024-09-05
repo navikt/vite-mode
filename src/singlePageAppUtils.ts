@@ -164,7 +164,7 @@ const localViteServerTemplate = `
 <html lang="no">
   <head>
       <script type="module" nonce="$NONCE">
-          import RefreshRuntime from 'http://localhost:$PORT/@react-refresh'
+          import RefreshRuntime from 'http://localhost:$PATH/@react-refresh'
           RefreshRuntime.injectIntoGlobalHook(window)
           window.$RefreshReg$ = () => {}
           window.$RefreshSig$ = () => (type) => type

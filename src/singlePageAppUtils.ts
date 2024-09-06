@@ -46,7 +46,7 @@ declare module "express-serve-static-core" {
  *
  * vite-on and vite-off uses strict-origin-when-cross-origin: enables us to land on the same path when turning mode on/off. Without we would always redirect to "/".
  */
-export function addLocalViteServerHandler(app: IRouter, options: Partial<ViteModeOptions>) {
+export function addViteModeHtmlToResponse(app: IRouter, options: Partial<ViteModeOptions>) {
   app.use(cookieParser());
   app.use((request, response, next) => {
     response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -73,6 +73,20 @@ export function addLocalViteServerHandler(app: IRouter, options: Partial<ViteMod
     if (localViteServerIsEnabled) {
       const mergedOptions = { ...DEFAULT_VITE_OPTIONS, ...options };
       serveLocalViteServer(response, mergedOptions);
+    }
+    return next();
+  });
+}
+
+/**
+ * This can be used to automatically serve ViteMode. Use this if you don't need the decorator
+ */
+export function serveViteMode(app: IRouter, options: Partial<ViteModeOptions>) {
+  addViteModeHtmlToResponse(app, options);
+  app.get("*", (request, response, next) => {
+    const viteModeHtml = response.viteModeHtml;
+    if (viteModeHtml) {
+      return response.send(viteModeHtml);
     }
     return next();
   });

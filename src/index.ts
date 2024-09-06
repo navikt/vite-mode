@@ -1,1 +1,1 @@
-export { addLocalViteServerHandler, addServeSpaHandler } from "./singlePageAppUtils.js";
+export { addServeSpaHandler, addViteModeHtmlToResponse, serveViteMode } from "./singlePageAppUtils.js";

@@ -12,6 +12,7 @@ const DEFAULT_VITE_OPTIONS = {
   useNonce: true, // TODO: explain
   indexFilePath: "src/main.tsx",
   colorTheme: "#ff8800", // Inspired by Vite's color scheme
+  setCSPHeaders: true,
 };
 
 // Add "viteModeHtml" as a possible property on the Express Response type
@@ -122,10 +123,12 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
     .replace("$NONCE", nonce)
     .replaceAll("$INDEX_FILE_PATH", options.indexFilePath);
 
-  response.setHeader(
-    "Content-Security-Policy",
-    mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
-  );
+  if (options.setCSPHeaders) {
+    response.setHeader(
+      "Content-Security-Policy",
+      mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
+    );
+  }
 
   response.viteModeHtml = template;
 }
@@ -154,6 +157,9 @@ function mergeCSP(cspHeaders: string[]) {
 
     for (const directive of directives) {
       const [name, ...values] = directive.trim().split(/\s+/);
+
+      if (!name) continue;
+
       if (!combinedCSP[name]) {
         combinedCSP[name] = new Set();
       }

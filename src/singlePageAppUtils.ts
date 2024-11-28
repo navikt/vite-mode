@@ -55,13 +55,13 @@ export function addViteModeHtmlToResponse(app: IRouter, options: Partial<ViteMod
   });
 
   app.get("*/vite-on", (request, response) => {
-    setViteCookie(response, true);
+    setViteCookie(response, true, options.subpath);
     const redirectUrl = request.originalUrl.replace(/\/vite-on$/, "") || "/";
 
     return response.redirect(redirectUrl);
   });
   app.get("*/vite-off", (request, response) => {
-    setViteCookie(response, false);
+    setViteCookie(response, false, options.subpath);
 
     const referer = request.headers.referer ?? "";
     const host = `http://${request.headers.host}`;
@@ -93,11 +93,12 @@ export function serveViteMode(app: IRouter, options: Partial<ViteModeOptions>) {
   });
 }
 
-function setViteCookie(response: Response, cookieValue: boolean) {
+function setViteCookie(response: Response, cookieValue: boolean, subpath: string | undefined) {
   response.cookie("use-local-vite-server", cookieValue, {
     httpOnly: false,
     secure: false,
     sameSite: "lax",
+    path: subpath || "/",
   });
 }
 

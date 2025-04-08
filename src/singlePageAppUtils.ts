@@ -87,7 +87,8 @@ export function serveViteMode(app: IRouter, options: Partial<ViteModeOptions>) {
   app.get("*", (request, response, next) => {
     const viteModeHtml = response.viteModeHtml;
     if (viteModeHtml) {
-      return response.send(viteModeHtml);
+      response.send(viteModeHtml);
+      return;
     }
     return next();
   });

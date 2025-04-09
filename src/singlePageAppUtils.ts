@@ -54,13 +54,13 @@ export function addViteModeHtmlToResponse(app: IRouter, options: Partial<ViteMod
     return next();
   });
 
-  app.get("*/vite-on", (request, response) => {
+  app.get("*splat/vite-on", (request, response) => {
     setViteCookie(response, true, options.subpath);
     const redirectUrl = request.originalUrl.replace(/\/vite-on$/, "") || "/";
 
     return response.redirect(redirectUrl);
   });
-  app.get("*/vite-off", (request, response) => {
+  app.get("*splat/vite-off", (request, response) => {
     setViteCookie(response, false, options.subpath);
 
     const referer = request.headers.referer ?? "";
@@ -69,7 +69,7 @@ export function addViteModeHtmlToResponse(app: IRouter, options: Partial<ViteMod
     const redirectUrl = referer.replace(host, "") || request.originalUrl.replace(/\/vite-off$/, "");
     return response.redirect(redirectUrl);
   });
-  app.get("*", (request, response, next) => {
+  app.get("/*splat", (request, response, next) => {
     const localViteServerIsEnabled = request.cookies["use-local-vite-server"] === "true";
     if (localViteServerIsEnabled) {
       const mergedOptions = { ...DEFAULT_VITE_OPTIONS, ...options };
@@ -84,7 +84,7 @@ export function addViteModeHtmlToResponse(app: IRouter, options: Partial<ViteMod
  */
 export function serveViteMode(app: IRouter, options: Partial<ViteModeOptions>) {
   addViteModeHtmlToResponse(app, options);
-  app.get("*", (request, response, next) => {
+  app.get("/*splat", (request, response, next) => {
     const viteModeHtml = response.viteModeHtml;
     if (viteModeHtml) {
       response.send(viteModeHtml);
@@ -111,7 +111,7 @@ function setViteCookie(response: Response, cookieValue: boolean, subpath: string
  * leaving it to the client-side router to interpret and handle url changes
  */
 export function addServeSpaHandler(app: Express, pathToSpaFile: string) {
-  app.get("*", (request, response) => {
+  app.get("/*splat", (request, response) => {
     return response.sendFile(pathToSpaFile);
   });
 }

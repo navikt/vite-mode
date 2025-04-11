@@ -54,13 +54,13 @@ export function addViteModeHtmlToResponse(app: IRouter, options: Partial<ViteMod
     return next();
   });
 
-  app.get("*splat/vite-on", (request, response) => {
+  app.get("{*splat}/vite-on", (request, response) => {
     setViteCookie(response, true, options.subpath);
     const redirectUrl = request.originalUrl.replace(/\/vite-on$/, "") || "/";
 
     return response.redirect(redirectUrl);
   });
-  app.get("*splat/vite-off", (request, response) => {
+  app.get("{*splat}/vite-off", (request, response) => {
     setViteCookie(response, false, options.subpath);
 
     const referer = request.headers.referer ?? "";

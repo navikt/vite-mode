@@ -145,7 +145,7 @@ function getCSP(nonce: string, options: ViteModeOptions) {
   const httpAddress = `http://localhost:${options.port}`;
   const wsAddress = `ws://localhost:${options.port}`;
   const nonceCSP = options.useNonce ? `'nonce-${nonce}'` : "";
-  return `script-src-elem ${nonceCSP} ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src ${httpAddress}`;
+  return `script-src-elem ${nonceCSP} ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src 'self' ${httpAddress}`;
 }
 
 /**

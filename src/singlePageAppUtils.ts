@@ -211,14 +211,6 @@ const localViteServerTemplate = `
               cursor: pointer;
           }
   
-          #explain-why-no-dev-server {
-              visibility: hidden;
-              position: absolute;
-              left: 100px;
-              top: 100px;
-              font-size: 20px;
-          }
-  
           #explain-why-no-dev-server:has(~ #$MOUNT_ID:empty) {
               visibility: visible;
           }
@@ -226,11 +218,6 @@ const localViteServerTemplate = `
   </head>
   <body>
     <span id="dev-mode"><a href="vite-off">Skru av Vite-mode</a></span>
-    <div id="explain-why-no-dev-server">
-        Det ser ikke ut som du har en Vite dev-server kjørende.<br />
-        Vær obs på at frontend er nødt til å kjøre på <code>http://localhost:$PATH</code><br />
-        eller <a href="/vite-off">skru av Vite-mode</a>
-    </div>
     <div id="$MOUNT_ID"></div>
     <!--Sonarcloud vil klage på at disse script-tagsa ikke har en integrity checksum.-->
     <!--Jeg anser det som fair å ignorere den. Scriptene peker kun til lokal maskin og denne filen serveres ikke i prod.-->

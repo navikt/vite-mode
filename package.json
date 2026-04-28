@@ -27,17 +27,17 @@
     "cookie-parser": "1.4.7"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.3",
-    "@eslint/js": "9.39.2",
+    "@eslint/eslintrc": "3.3.5",
+    "@eslint/js": "10.0.1",
     "@types/cookie-parser": "1.4.10",
     "@types/express": "5.0.6",
-    "@types/node": "22.15.19",
-    "eslint": "9.39.2",
+    "@types/node": "25.6.0",
+    "eslint": "10.2.1",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-simple-import-sort": "12.1.1",
-    "eslint-plugin-unicorn": "62.0.0",
-    "prettier": "3.8.1",
-    "typescript": "5.9.3",
-    "typescript-eslint": "8.54.0"
+    "eslint-plugin-simple-import-sort": "13.0.0",
+    "eslint-plugin-unicorn": "64.0.0",
+    "prettier": "3.8.3",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.58.2"
   }
 }

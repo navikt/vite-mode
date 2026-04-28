@@ -13,6 +13,7 @@ const DEFAULT_VITE_OPTIONS = {
   indexFilePath: "src/main.tsx",
   colorTheme: "#ff8800", // Inspired by Vite's color scheme
   setCSPHeaders: true,
+  templateTransform: (defaultTemplate: string) => defaultTemplate, // default no transformation
 };
 
 // Add "viteModeHtml" as a possible property on the Express Response type
@@ -118,7 +119,7 @@ export function addServeSpaHandler(app: Express, pathToSpaFile: string) {
 function serveLocalViteServer(response: Response, options: ViteModeOptions) {
   const nonce = crypto.randomBytes(16).toString("base64");
 
-  const template = localViteServerTemplate
+  const template = options.templateTransform(localViteServerTemplate)
     .replaceAll("$PATH", `${options.port}${options.subpath}`)
     .replaceAll("$MOUNT_ID", options.mountId)
     .replaceAll("$COLOR_THEME", options.colorTheme)

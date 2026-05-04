@@ -3,7 +3,18 @@ import * as crypto from "node:crypto";
 import cookieParser from "cookie-parser";
 import { Express, IRouter, Response } from "express";
 
-type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
+import { ViteModeCspPolicy } from "./csp";
+
+/**
+ * [kind == 'doNotModify']: Leave CSP header unmodified.
+ *
+ * [kind == 'modifyForViteMode']: Partially modify CSP header to permit the client to connect to the local webserver.
+ *
+ * [kind == 'manual']: Set or overwrite the CSP header with provided string.
+ */
+type CspHeaderOptions = { kind: "doNotModify" } | { kind: "modifyForViteMode" } | { kind: "manual"; cspString: string };
+
+export type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
 
 const DEFAULT_VITE_OPTIONS = {
   port: "5173",
@@ -12,7 +23,9 @@ const DEFAULT_VITE_OPTIONS = {
   useNonce: true, // TODO: explain
   indexFilePath: "src/main.tsx",
   colorTheme: "#ff8800", // Inspired by Vite's color scheme
-  setCSPHeaders: true,
+  cspHeaderOptions: {
+    kind: "modifyForViteMode",
+  } as CspHeaderOptions,
   templateTransform: (defaultTemplate: string) => defaultTemplate, // default no transformation
 };
 
@@ -126,61 +139,27 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
     .replace("$NONCE", nonce)
     .replaceAll("$INDEX_FILE_PATH", options.indexFilePath);
 
-  if (options.setCSPHeaders) {
-    response.setHeader(
-      "Content-Security-Policy",
-      mergeCSP([response.getHeaders()["content-security-policy"] ?? "", getCSP(nonce, options)]),
-    );
+  switch (options.cspHeaderOptions.kind) {
+    case "doNotModify": {
+      break;
+    }
+    case "manual": {
+      response.setHeader("content-security-policy", options.cspHeaderOptions.cspString);
+      break;
+    }
+    case "modifyForViteMode": {
+      const defaultCsp = response.getHeaders()["content-security-policy"] ?? "";
+      const modifiedCsp = new ViteModeCspPolicy(defaultCsp)
+        .merge(ViteModeCspPolicy.getRequiredCspPolicyForViteMode(nonce, options))
+        .removeDirective(ViteModeCspPolicy.cspDirectiveNames.upgradeInsecureRequests); // vite mode will not work if only wss (not ws) is accepted.
+      response.setHeader("content-security-policy", modifiedCsp.asString());
+      break;
+    }
   }
 
   response.viteModeHtml = template;
 }
 
-/**
- * We need the following CSP:
- * script-src-elem: to enable the inline script that makes refresh work
- * connect-src: to enable actual live reloading through websocket
- * img-src: to enable loading images from the dev-server instead of the actual server
- */
-function getCSP(nonce: string, options: ViteModeOptions) {
-  const httpAddress = `http://localhost:${options.port}`;
-  const wsAddress = `ws://localhost:${options.port}`;
-  const nonceCSP = options.useNonce ? `'nonce-${nonce}'` : "";
-  return `script-src-elem ${nonceCSP} ${httpAddress} 'self'; connect-src 'self' ${wsAddress}; img-src 'self' ${httpAddress}`;
-}
-
-/**
- * Algorithm for merging cspHeaders. Author-credit: ChatGPT
- */
-function mergeCSP(cspHeaders: string[]) {
-  const combinedCSP: Record<string, Set<string>> = {};
-
-  for (const csp of cspHeaders) {
-    const directives = csp.split(";");
-
-    for (const directive of directives) {
-      const [name, ...values] = directive.trim().split(/\s+/);
-
-      if (!name) continue;
-
-      if (!combinedCSP[name]) {
-        combinedCSP[name] = new Set();
-      }
-
-      for (const value of values) {
-        combinedCSP[name].add(value);
-      }
-    }
-  }
-
-  // Convert combinedCSP object to CSP header string
-  let combinedCSPHeader = "";
-  for (const [name, values] of Object.entries(combinedCSP)) {
-    combinedCSPHeader += `${name} ${[...values].join(" ")}; `;
-  }
-
-  return combinedCSPHeader.trim();
-}
 
 const localViteServerTemplate = `
 <!DOCTYPE html>

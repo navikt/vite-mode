@@ -8,11 +8,14 @@ import { ViteModeCspPolicy } from "./csp.js";
 /**
  * [kind == 'doNotModify']: Leave CSP header unmodified.
  *
- * [kind == 'modifyForViteMode']: Partially modify CSP header to permit the client to connect to the local webserver.
+ * [kind == 'modifyForViteMode']: Let vite-mode partially modify CSP header to permit the client to connect to the local development webserver.
  *
- * [kind == 'manual']: Set or overwrite the CSP header with provided string.
+ * [kind == 'transformInCallback']: Modify or overwrite the CSP header in a callback based on the default CSP header.
  */
-type CspHeaderOptions = { kind: "doNotModify" } | { kind: "modifyForViteMode" } | { kind: "manual"; cspString: string };
+type CspHeaderOptions =
+  | { kind: "doNotModify" }
+  | { kind: "modifyForViteMode" }
+  | { kind: "transformInCallback"; transformCspString: (defaultCspString: string) => string };
 
 export type ViteModeOptions = typeof DEFAULT_VITE_OPTIONS;
 
@@ -143,8 +146,10 @@ function serveLocalViteServer(response: Response, options: ViteModeOptions) {
     case "doNotModify": {
       break;
     }
-    case "manual": {
-      response.setHeader("content-security-policy", options.cspHeaderOptions.cspString);
+    case "transformInCallback": {
+      const defaultCsp = response.getHeaders()["content-security-policy"] ?? "";
+      const transformedCsp = options.cspHeaderOptions.transformCspString(defaultCsp);
+      response.setHeader("content-security-policy", transformedCsp);
       break;
     }
     case "modifyForViteMode": {

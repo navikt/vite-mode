@@ -3,7 +3,7 @@ import * as crypto from "node:crypto";
 import cookieParser from "cookie-parser";
 import { Express, IRouter, Response } from "express";
 
-import { ViteModeCspPolicy } from "./csp";
+import { ViteModeCspPolicy } from "./csp.js";
 
 /**
  * [kind == 'doNotModify']: Leave CSP header unmodified.

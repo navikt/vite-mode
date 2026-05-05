@@ -1,4 +1,4 @@
-import { ViteModeOptions } from "./singlePageAppUtils";
+import { ViteModeOptions } from "./singlePageAppUtils.js";
 
 type DefinedCspDirectiveName = (typeof ViteModeCspPolicy.cspDirectiveNames)[keyof typeof ViteModeCspPolicy.cspDirectiveNames];
 type CspDirectiveName = DefinedCspDirectiveName | string;
@@ -89,7 +89,7 @@ export class ViteModeCspPolicy {
     {
       /*
        * We need the following CSP:
-       * script-src-elem: to enable the inline script that makes refresh work
+       * script-src-elem/script-src: to enable the inline script that makes refresh work
        * connect-src: to enable actual live reloading through websocket
        * img-src: to enable loading images from the dev-server instead of the actual server
        */
@@ -97,6 +97,7 @@ export class ViteModeCspPolicy {
       const wsAddress = `ws://localhost:${options.port}`;
       const nonceCSP = options.useNonce ? `'nonce-${nonce}'` : "";
       out.addToDirective(ViteModeCspPolicy.cspDirectiveNames.scriptSrcElem, new Set([nonceCSP, httpAddress]));
+      out.addToDirective(ViteModeCspPolicy.cspDirectiveNames.scriptSrc, new Set([nonceCSP, httpAddress]));
       out.addToDirective(ViteModeCspPolicy.cspDirectiveNames.connectSrc, new Set(["'self'", wsAddress]));
       out.addToDirective(ViteModeCspPolicy.cspDirectiveNames.imgSrc, new Set(["'self'", httpAddress]));
     }

@@ -57,7 +57,7 @@ export class ViteModeCspPolicy {
     for (const name of this.directiveMap.keys()) {
       const elms = this.directiveMap.get(name);
       if (elms) {
-        const elmStrList = elms.values().toArray().join(", ");
+        const elmStrList = elms.values().toArray().join(" ");
         out.push(name + " " + elmStrList);
       } else {
         out.push(name);

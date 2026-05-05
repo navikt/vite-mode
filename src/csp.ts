@@ -18,7 +18,12 @@ export class ViteModeCspPolicy {
   }
 
   addToDirective(directiveName: CspDirectiveName, elements: Set<string>): ViteModeCspPolicy {
-    const directiveSet = this.directiveMap.get(directiveName.toLowerCase().trim()) || new Set();
+    const normalizedDirectiveName = directiveName.toLowerCase().trim();
+    let directiveSet = this.directiveMap.get(normalizedDirectiveName);
+    if (!directiveSet) {
+      directiveSet = new Set();
+      this.directiveMap.set(directiveName, directiveSet);
+    }
     for (const element of elements) {
       directiveSet.add(element);
     }
